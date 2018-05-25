@@ -1,0 +1,71 @@
+<%= form_tag locations_path, :method => :get do %>
+  <%= text_field_tag :search, params[:search] %>
+  <%= submit_tag "Search Near", name: nil %>
+<% end %>
+<p id="notice"><%= notice %></p>
+
+<h1>Locations</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Address</th>
+      <th>Latitude</th>
+      <th>Longitude</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @locations.each do |location| %>
+      <tr>
+        <td><%= location.address %></td>
+        <td><%= location.latitude %></td>
+        <td><%= location.longitude %></td>
+        <td><%= link_to 'Show', location %></td>
+        <td><%= link_to 'Edit', edit_location_path(location) %></td>
+        <td><%= link_to 'Destroy', location, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+<div style='width: 800px;'>
+  <div id="map" style='width: 800px; height: 400px;'></div>
+</div>
+<%= link_to 'New Location', new_location_path %>
+
+<script>
+
+  // handler = Gmaps.build('Google');
+  // handler.buildMap({ provider: {}, internal: {id: 'map'}}, function(){
+  //   markers = handler.addMarkers( <%= raw @hash.to_json %>);
+  //   handler.bounds.extendWith(markers);
+  //   handler.fitMapToBounds();
+  // });
+  // =========
+  // markers = handler.addMarkers(<%=raw @hash.to_json %>);
+  <% @hash = Gmaps4rails.build_markers(@locations) do |location, marker| %>
+    <% marker.lat location.latitude %>
+    <% marker.lng location.longitude %>
+  <% end %>
+  var handler = Gmaps.build('Google');
+  handler.buildMap({ internal: {id: 'map'} }, function(){
+    // be aware chrome >= 50 requires https for geolocation to work
+    if(navigator.geolocation)
+      navigator.geolocation.getCurrentPosition(displayOnMap);
+  });
+
+  function displayOnMap(position){
+    var hash = <%= raw @hash.to_json %> ;
+    var marker = handler.addMarker({
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+      infowindow: "hello!"
+    });
+    handler.addMarkers(hash);
+    handler.map.centerOn(marker);
+    handler.bounds.extendWith(marker);
+    handler.fitMapToBounds();
+  };
+</script>
